@@ -277,7 +277,14 @@ public class Warlight2 implements Logic
 	{	
 		String mapFile = args[0];
 		String bot1Cmd = args[1];
-		String bot2Cmd = args[2];
+		String bot2Cmd;
+		if(args.length==3)
+			bot2Cmd = args[2];
+		else{
+			System.out.println("Give opponent (player2) version name:");
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			bot2Cmd = "../Bot-Versions/"+br.readLine();
+		}
 
 		// Construct engine
         Engine engine = new Engine();
