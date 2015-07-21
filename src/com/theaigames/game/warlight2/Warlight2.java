@@ -276,14 +276,14 @@ public class Warlight2 implements Logic
 	public static void main(String args[]) throws Exception
 	{	
 		String mapFile = args[0];
-		String bot1Cmd = args[1];
-		String bot2Cmd;
+		String[] bot1Cmd = {args[1]};
+		String[] bot2Cmd = {""};
 		if(args.length==3)
-			bot2Cmd = args[2];
+			bot2Cmd[0] = args[2];
 		else{
 			System.out.println("Give opponent (player2) version name:");
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-			bot2Cmd = "../Bot-Versions/"+br.readLine();
+			bot2Cmd[0] = "/Users/David/Documents/Studentenleben Aachen/Wettbewerbe/TheAiGames/Bot-Versions/"+br.readLine();
 		}
 
 		// Construct engine
