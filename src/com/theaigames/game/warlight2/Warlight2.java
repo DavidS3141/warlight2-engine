@@ -44,8 +44,7 @@ import com.theaigames.game.warlight2.map.Map;
  * @author Jim van Eeden <jim@starapple.nl>
  */
 
-public class Warlight2 implements Logic
-{
+public class Warlight2 implements Logic {
 	private String playerName1, playerName2;
 	private final String mapFile;
 
@@ -53,195 +52,203 @@ public class Warlight2 implements Logic
 	private Player player1, player2;
 	private int maxRounds;
 
+	// TODO own values
+	static private int player1Wins;
+	static private int player2Wins;
+	static private int draws;
+
 	private String secretKey, accessKey;
-	
+
 	private final int STARTING_ARMIES = 5;
 	private final long TIMEBANK_MAX = 10000l;
 	private final long TIME_PER_MOVE = 500l;
-	private final int SIZE_WASTELANDS = 6; // size of wastelands, <= 0 for no wastelands
+	private final int SIZE_WASTELANDS = 6; // size of wastelands, <= 0 for no
+											// wastelands
 
-	public Warlight2(String mapFile)
-	{
+	public Warlight2(String mapFile) {
 		this.mapFile = mapFile;
 		this.playerName1 = "player1";
 		this.playerName2 = "player2";
 	}
-	
-	
+
 	/**
 	 * sets up everything that's needed before a round can be played
-	 * @param players : list of bots that have already been initialized
+	 * 
+	 * @param players
+	 *            : list of bots that have already been initialized
 	 */
 	@Override
-    public void setupGame(ArrayList<IOPlayer> players) throws IncorrectPlayerCountException, IOException {
-		
-		Map initMap, map;
-		
-		System.out.println("setting up game");
-		
-        // Determine array size is two players
-        if (players.size() != 2) {
-            throw new IncorrectPlayerCountException("Should be two players");
-        }
-        
-        this.player1 = new Player(playerName1, players.get(0), STARTING_ARMIES, TIMEBANK_MAX, TIME_PER_MOVE);
-        this.player2 = new Player(playerName2, players.get(1), STARTING_ARMIES, TIMEBANK_MAX, TIME_PER_MOVE);
-        
-        // get map string from database and setup the map
-  		initMap = MapCreator.createMap(getMapString());
-  		map = MapCreator.setupMap(initMap, SIZE_WASTELANDS);
-  		this.maxRounds = MapCreator.determineMaxRounds(map);
-  		
-  		// start the processor
-  		System.out.println("Starting game...");
-  		this.processor = new Processor(map, player1, player2);
-	
-  		sendSettings(player1);
-  		sendSettings(player2);
-  		MapCreator.sendSetupMapInfo(player1, map);
-  		MapCreator.sendSetupMapInfo(player2, map);
+	public void setupGame(ArrayList<IOPlayer> players) throws IncorrectPlayerCountException, IOException {
 
-  		player1.setTimeBank(TIMEBANK_MAX);
+		Map initMap, map;
+
+		System.out.println("setting up game");
+
+		// Determine array size is two players
+		if (players.size() != 2) {
+			throw new IncorrectPlayerCountException("Should be two players");
+		}
+
+		this.player1 = new Player(playerName1, players.get(0), STARTING_ARMIES, TIMEBANK_MAX, TIME_PER_MOVE);
+		this.player2 = new Player(playerName2, players.get(1), STARTING_ARMIES, TIMEBANK_MAX, TIME_PER_MOVE);
+
+		// get map string from database and setup the map
+		initMap = MapCreator.createMap(getMapString());
+		map = MapCreator.setupMap(initMap, SIZE_WASTELANDS);
+		this.maxRounds = MapCreator.determineMaxRounds(map);
+
+		// start the processor
+		System.out.println("Starting game...");
+		this.processor = new Processor(map, player1, player2);
+
+		sendSettings(player1);
+		sendSettings(player2);
+		MapCreator.sendSetupMapInfo(player1, map);
+		MapCreator.sendSetupMapInfo(player2, map);
+
+		player1.setTimeBank(TIMEBANK_MAX);
 		player2.setTimeBank(TIMEBANK_MAX);
 
-  		this.processor.distributeStartingRegions(); //decide the player's starting regions
-		this.processor.recalculateStartingArmies(); //calculate how much armies the players get at the start of the round (depending on owned SuperRegions)
+		this.processor.distributeStartingRegions(); // decide the player's
+													// starting regions
+		this.processor.recalculateStartingArmies(); // calculate how much armies
+													// the players get at the
+													// start of the round
+													// (depending on owned
+													// SuperRegions)
 		this.processor.sendAllInfo();
-    }
-	
-	
+	}
+
 	/**
 	 * play one round of the game
-	 * @param roundNumber : round number
+	 * 
+	 * @param roundNumber
+	 *            : round number
 	 */
 	@Override
-    public void playRound(int roundNumber) 
-	{
+	public void playRound(int roundNumber) {
 		player1.getBot().addToDump(String.format("Round %d\n", roundNumber));
 		player2.getBot().addToDump(String.format("Round %d\n", roundNumber));
-		
+
 		this.processor.playRound(roundNumber);
 	}
-	
-	
+
 	/**
 	 * @return : True when the game is over
 	 */
 	@Override
-    public boolean isGameWon()
-	{
-        if (this.processor.getWinner() != null || this.processor.getRoundNr() > this.maxRounds) {
-        	return true;
-        }
-        return false;
-    }
-	
+	public boolean isGameWon() {
+		if (this.processor.getWinner() != null || this.processor.getRoundNr() > this.maxRounds) {
+			return true;
+		}
+		return false;
+	}
+
 	/**
 	 * Sends all game settings to given player
-	 * @param player : player to send settings to
+	 * 
+	 * @param player
+	 *            : player to send settings to
 	 */
 	private void sendSettings(Player player) {
 		player.sendInfo("settings timebank " + TIMEBANK_MAX);
-		player.sendInfo("settings time_per_move " + TIME_PER_MOVE); 
+		player.sendInfo("settings time_per_move " + TIME_PER_MOVE);
 		player.sendInfo("settings max_rounds " + this.maxRounds);
 		player.sendInfo("settings your_bot " + player.getName());
-		
+
 		if (player.getName().equals(player1.getName()))
 			player.sendInfo("settings opponent_bot " + player2.getName());
 		else
 			player.sendInfo("settings opponent_bot " + player1.getName());
 	}
-	
+
 	/**
 	 * Reads the string from the map file
+	 * 
 	 * @return : string representation of the map
 	 * @throws IOException
 	 */
-	private String getMapString() throws IOException 
-	{
+	private String getMapString() throws IOException {
 		File file = new File(this.mapFile);
-	    StringBuilder fileContents = new StringBuilder((int) file.length());
-	    Scanner scanner = new Scanner(file);
-	    String lineSeparator = System.getProperty("line.separator");
+		StringBuilder fileContents = new StringBuilder((int) file.length());
+		Scanner scanner = new Scanner(file);
+		String lineSeparator = System.getProperty("line.separator");
 
-	    try {
-	        while(scanner.hasNextLine()) {        
-	            fileContents.append(scanner.nextLine() + lineSeparator);
-	        }
-	        return fileContents.toString();
-	    } finally {
-	        scanner.close();
-	    }
+		try {
+			while (scanner.hasNextLine()) {
+				fileContents.append(scanner.nextLine() + lineSeparator);
+			}
+			return fileContents.toString();
+		} finally {
+			scanner.close();
+		}
 	}
-	
+
 	/**
 	 * close the bot processes, save, exit program
 	 */
 	@Override
-	public void finish() throws Exception
-	{
+	public void finish() throws Exception {
 		this.player1.getBot().finish();
 		this.player2.getBot().finish();
 		Thread.sleep(100);
 
 		// write everything
-		try { 
-			this.saveGame(); 
-		} catch(Exception e) {
+		try {
+			this.saveGame();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		System.out.println("Done.");
-		
-        System.exit(0);
+
+		// TODO
+		// System.exit(0);
 	}
 
 	/**
-	 * Turns the game that is stored in the processor to a nice string for the visualization
-	 * @param winner : winner
-	 * @param gameView : type of view
+	 * Turns the game that is stored in the processor to a nice string for the
+	 * visualization
+	 * 
+	 * @param winner
+	 *            : winner
+	 * @param gameView
+	 *            : type of view
 	 * @return : string that the visualizer can read
 	 */
-	private String getPlayedGame(Player winner, String gameView)
-	{
-		StringBuilder out = new StringBuilder();		
+	private String getPlayedGame(Player winner, String gameView) {
+		StringBuilder out = new StringBuilder();
 
 		LinkedList<MoveResult> playedGame;
-		if(gameView.equals("player1"))
+		if (gameView.equals("player1"))
 			playedGame = this.processor.getPlayer1PlayedGame();
-		else if(gameView.equals("player2"))
+		else if (gameView.equals("player2"))
 			playedGame = this.processor.getPlayer2PlayedGame();
 		else
 			playedGame = this.processor.getFullPlayedGame();
-			
+
 		playedGame.removeLast();
 		int roundNr = 0;
-		for(MoveResult moveResult : playedGame)
-		{
-			if(moveResult != null)
-			{
-				if(moveResult.getMove() != null)
-				{
+		for (MoveResult moveResult : playedGame) {
+			if (moveResult != null) {
+				if (moveResult.getMove() != null) {
 					try {
 						PlaceArmiesMove plm = (PlaceArmiesMove) moveResult.getMove();
 						out.append(plm.getString() + "\n");
-					}
-					catch(Exception e) {
+					} catch (Exception e) {
 						AttackTransferMove atm = (AttackTransferMove) moveResult.getMove();
 						out.append(atm.getString() + "\n");
 					}
-					
+
 				}
 				out.append("map " + moveResult.getMap().getMapString() + "\n");
-			}
-			else
-			{
+			} else {
 				out.append("round " + roundNr + "\n");
 				roundNr++;
 			}
 		}
-		
-		if(winner != null)
+
+		if (winner != null)
 			out.append(winner.getName() + " won\n");
 		else
 			out.append("Nobody won\n");
@@ -249,53 +256,97 @@ public class Warlight2 implements Logic
 		return out.toString();
 	}
 
-
 	/**
 	 * Does everything that is needed to store the output of a game
 	 */
 	public void saveGame() {
-		
+
 		Player winner = this.processor.getWinner();
 		int score = this.processor.getRoundNr() - 1;
-		
-		if(winner != null) {
+
+		if (winner != null) {
 			System.out.println("winner: " + winner.getName());
+			if (winner.getName() == "player1")
+				player1Wins++;
+			else
+				player2Wins++;
 		} else {
 			System.out.println("winner: draw");
-		}
-		
-		System.out.println("Saving the game...");
-		// do stuff here if you want to save results
-	}
-	
-	/**
-	 * main
-	 * @param args : the map file should be given, along with the commands that start the bot processes
-	 * @throws Exception
-	 */
-	public static void main(String args[]) throws Exception
-	{	
-		String mapFile = args[0];
-		String[] bot1Cmd = {args[1]};
-		String[] bot2Cmd = {""};
-		if(args.length==3)
-			bot2Cmd[0] = args[2];
-		else{
-			System.out.println("Give opponent (player2) version name:");
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-			bot2Cmd[0] = "/Users/David/Documents/Studentenleben Aachen/Wettbewerbe/TheAiGames/Bot-Versions/"+br.readLine();
+			draws++;
 		}
 
+		System.out.println("Saving the game...");
+		// do stuff here if you want to save results
+		// TODO own writing
+		Writer writer;
+		try {
+			writer = new BufferedWriter(
+					new OutputStreamWriter(new FileOutputStream(this.player1.getName() + ".dump"), "utf-8"));
+			writer.write(this.player1.getBot().getDump());
+			writer.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			writer = new BufferedWriter(
+					new OutputStreamWriter(new FileOutputStream(this.player2.getName() + ".dump"), "utf-8"));
+			writer.write(this.player2.getBot().getDump());
+			writer.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * main
+	 * 
+	 * @param args
+	 *            : the map file should be given, along with the commands that
+	 *            start the bot processes
+	 * @throws Exception
+	 */
+	public static void runGame(String mapFile, String[] bot1Cmd, String[] bot2Cmd) throws Exception {
 		// Construct engine
-        Engine engine = new Engine();
-        
-        // Set logic
-        engine.setLogic(new Warlight2(mapFile));
-		
-        // Add players
-        engine.addPlayer(bot1Cmd);
-        engine.addPlayer(bot2Cmd);
-		
-        engine.start();
+		Engine engine = new Engine();
+
+		// Set logic
+		engine.setLogic(new Warlight2(mapFile));
+
+		// Add players
+		engine.addPlayer(bot1Cmd);
+		engine.addPlayer(bot2Cmd);
+
+		engine.start();
+	}
+
+	// TODO own simulation
+	public static void main(String args[]) throws Exception {
+		player1Wins = 0;
+		player2Wins = 0;
+		draws = 0;
+		String[] maps = { "example", "debugVsAmeno", "debugVsFourLeafClojure", "debugVsHyperbolicus", "debugVsIcewater",
+				"debugVsIDDQD", "debugVsPandaCoders", "debugVsShinobi_warlight2" };
+		String[] bot1Cmd = { "" };
+		String[] bot2Cmd = { "" };
+		{
+			System.out.println("Give player1 version name:");
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			bot1Cmd[0] = "/Users/David/Documents/Studentenleben Aachen/Wettbewerbe/TheAiGames/Bot-Versions/"
+					+ br.readLine();
+		}
+		{
+			System.out.println("Give player2 version name:");
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			bot2Cmd[0] = "/Users/David/Documents/Studentenleben Aachen/Wettbewerbe/TheAiGames/Bot-Versions/"
+					+ br.readLine();
+		}
+		System.out.println("Starting simulation with " + maps.length + " game rounds now ...");
+		for (int i = 0; i < maps.length; i++) {
+			runGame("maps/" + maps[i] + ".map", bot1Cmd, bot2Cmd);
+		}
+		System.out.println("Statistics of " + maps.length + " games:");
+		System.out.println("Player 1 wins " + player1Wins + " times.");
+		System.out.println("Player 2 wins " + player2Wins + " times.");
+		System.out.println("There were " + draws + " draws.");
 	}
 }
