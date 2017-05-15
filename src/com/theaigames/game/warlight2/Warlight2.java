@@ -324,8 +324,10 @@ public class Warlight2 implements Logic {
 		player1Wins = 0;
 		player2Wins = 0;
 		draws = 0;
-		String[] maps = { "example", "debugVsAmeno", "debugVsFourLeafClojure", "debugVsHyperbolicus", "debugVsIcewater",
-				"debugVsIDDQD", "debugVsPandaCoders", "debugVsShinobi_warlight2" };
+		String[] maps = { "55d531ce1c687b0946a6fdb8", "debugVsAmeno", "debugVsAuman", "debugVsBlackfish",
+				"debugVsBotzilla", "debugVsCodefathers", "debugVsFlorinSalam", "debugVsFourLeafClojure",
+				"debugVsHyperbolicus", "debugVsIcewater", "debugVsIDDQD", "debugVsLeMiaouch", "debugVsPandaCoders",
+				"debugVsShinobi_warlight2", "debugVsTestRun666", "example" };
 		String[] bot1Cmd = { "" };
 		String[] bot2Cmd = { "" };
 		{
